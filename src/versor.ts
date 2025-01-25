@@ -3,7 +3,6 @@
 const radians = Math.PI / 180;
 const degrees = 180 / Math.PI;
 
-type double = [number, number];
 type triple = [number, number, number];
 type quad = [number, number, number, number];
 
