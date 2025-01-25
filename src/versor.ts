@@ -45,7 +45,7 @@ export function fromAngles([l, p, g]: triple) {
     ];
 }
 
-export function multiply([a1, b1, c1, d1]: quad, [a2, b2, c2, d2]: quad) : quad {
+export function multiply([a1, b1, c1, d1]: quad, [a2, b2, c2, d2]: quad): quad {
     return [
         a1 * a2 - b1 * b2 - c1 * c2 - d1 * d2,
         a1 * b2 + b1 * a2 + c1 * d2 - d1 * c2,
@@ -54,7 +54,7 @@ export function multiply([a1, b1, c1, d1]: quad, [a2, b2, c2, d2]: quad) : quad 
     ];
 }
 
-export function toAngles([a, b, c, d]: quad) : triple {
+export function toAngles([a, b, c, d]: quad): triple {
     return [
         Math.atan2(2 * (a * b + c * d), 1 - 2 * (b * b + c * c)) * degrees,
         Math.asin(Math.max(-1, Math.min(1, 2 * (a * c - d * b)))) * degrees,

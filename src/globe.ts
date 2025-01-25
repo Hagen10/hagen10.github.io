@@ -37,17 +37,15 @@ export function createGlobe(container: HTMLElement) {
 
         function dragstarted(event: any, _d: any) {
             // @ts-ignore
-            const bla = projection.invert([event.x, event.y]);
-
-            v0 = versor.cartesian(bla);
+            const res = projection.invert([event.x, event.y]);
+            v0 = versor.cartesian(res);
             q0 = versor.fromAngles(r0 = projection.rotate());
         }
 
         function dragged(event: any, _d: any) {
             // @ts-ignore
-            const bla = projection.rotate(r0).invert([event.x, event.y]);
-
-            const v1 = versor.cartesian(bla);
+            const res = projection.rotate(r0).invert([event.x, event.y]);
+            const v1 = versor.cartesian(res);
             const q1 = versor.multiply(q0, versor.delta(v0, v1));
             projection.rotate(versor.toAngles(q1));
         }
