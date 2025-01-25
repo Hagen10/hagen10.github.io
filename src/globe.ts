@@ -7,7 +7,7 @@ export function createGlobe(container: HTMLElement) {
     const graticule = d3.geoGraticule10();
     const sphere: d3.GeoSphere = { type: "Sphere" };
     const projection = d3.geoOrthographic().precision(0.1);
-    const width = 928;
+    const width = window.innerWidth / 2;
     const height = get_height();
     const context = helper.context2d(width, height);
 
