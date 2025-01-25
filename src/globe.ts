@@ -36,7 +36,9 @@ export function createGlobe(container: HTMLElement) {
         let v0: any, q0: any, r0: any;
 
         function dragstarted(event: any, _d: any) {
-            v0 = versor.cartesian(projection.invert([event.x, event.y]));
+            const bla = projection.invert([event.x, event.y]);
+
+            v0 = versor.cartesian(bla);
             q0 = versor.fromAngles(r0 = projection.rotate());
         }
 
