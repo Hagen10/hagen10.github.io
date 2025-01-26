@@ -17,16 +17,16 @@ export function createGlobe(container: HTMLElement) {
     const path = d3.geoPath(projection, context);
 
 
-    function get_height() {
-        const [[x0, y0], [x1, y1]] = d3.geoPath(projection.fitWidth(width, sphere)).bounds(sphere);
-        const dy = Math.ceil(y1 - y0), l = Math.min(Math.ceil(x1 - x0), dy);
-        projection.scale(projection.scale() * (l - 1) / l).precision(0.2);
+    // function get_height() {
+    //     const [[x0, y0], [x1, y1]] = d3.geoPath(projection.fitWidth(width, sphere)).bounds(sphere);
+    //     const dy = Math.ceil(y1 - y0), l = Math.min(Math.ceil(x1 - x0), dy);
+    //     projection.scale(projection.scale() * (l - 1) / l).precision(0.2);
 
-        projection.scale(200).precision(0.2);
-        return window.innerHeight * 0.9;
+    //     projection.scale(200).precision(0.2);
+    //     return window.innerHeight * 0.9;
 
-        return dy;
-    }
+    //     return dy;
+    // }
 
     function render(land: any) {
         context.clearRect(0, 0, width, height2);
