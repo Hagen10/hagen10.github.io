@@ -3,26 +3,33 @@ import * as helper from './helper.ts';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 
+// Code comes from: observablehq.com/@d3/versor-zooming
+
 export function createGlobe(container: HTMLElement) {
     const graticule = d3.geoGraticule10();
     const sphere: d3.GeoSphere = { type: "Sphere" };
-    const projection = d3.geoOrthographic().precision(0.1);
-    const width = window.innerWidth * 0.8;
-    const height = get_height();
+    const width = window.innerWidth * 0.9;
+    const height2 = window.innerHeight * 0.9;
+    // const height = get_height();
 
-    const context = helper.context2d(width, height);
-
+    const projection = d3.geoOrthographic().precision(0.1).fitSize([width, height2], sphere);
+    const context = helper.context2d(width, height2);
     const path = d3.geoPath(projection, context);
+
 
     function get_height() {
         const [[x0, y0], [x1, y1]] = d3.geoPath(projection.fitWidth(width, sphere)).bounds(sphere);
         const dy = Math.ceil(y1 - y0), l = Math.min(Math.ceil(x1 - x0), dy);
         projection.scale(projection.scale() * (l - 1) / l).precision(0.2);
+
+        projection.scale(200).precision(0.2);
+        return window.innerHeight * 0.9;
+
         return dy;
     }
 
     function render(land: any) {
-        context.clearRect(0, 0, width, height);
+        context.clearRect(0, 0, width, height2);
         context.beginPath(), path(sphere), context.fillStyle = "#fff", context.fill();
         context.beginPath(), path(graticule), context.strokeStyle = "#ccc", context.stroke();
 
