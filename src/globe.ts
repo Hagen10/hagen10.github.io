@@ -62,6 +62,7 @@ export function createGlobe(container: HTMLElement) {
 
         function zoomStarted(this: any, event: any, _d: any) {
             let pt = point(event, this);
+            // @ts-ignore
             v0 = versor.cartesian(projection.invert([pt[0], pt[1]]));
             q0 = versor.fromAngles(r0 = projection.rotate());
         }
@@ -69,6 +70,7 @@ export function createGlobe(container: HTMLElement) {
         function zoomed(this: any, event: any, d: any) {
             projection.scale(event.transform.k);
             const pt = point(event, this);
+            // @ts-ignore
             const v1 = versor.cartesian(projection.rotate(r0).invert([pt[0], pt[1]]));
             const delta = versor.delta(v0, v1);
             let q1 = versor.multiply(q0, delta);
