@@ -7,8 +7,9 @@ export function createGlobe(container: HTMLElement) {
     const graticule = d3.geoGraticule10();
     const sphere: d3.GeoSphere = { type: "Sphere" };
     const projection = d3.geoOrthographic().precision(0.1);
-    const width = window.innerWidth / 2;
+    const width = window.innerWidth * 0.8;
     const height = get_height();
+
     const context = helper.context2d(width, height);
 
     const path = d3.geoPath(projection, context);
@@ -32,27 +33,72 @@ export function createGlobe(container: HTMLElement) {
         context.beginPath(), path(sphere), context.stroke();
     }
 
-    function drag(projection: d3.GeoProjection) {
-        let v0: any, q0: any, r0: any;
+    function zoom(projection: d3.GeoProjection) {
+        let scale = projection.scale();
+        let v0: any, q0: any, r0: any, a0: any, tl: any;
+        let scaleExtent: [number, number] = [0.8 * scale, 8 * scale];
 
-        function dragstarted(event: any, _d: any) {
-            // @ts-ignore
-            const res = projection.invert([event.x, event.y]);
-            v0 = versor.cartesian(res);
+        const zoom = d3.zoom()
+            .scaleExtent(scaleExtent)
+            .on("start", zoomStarted)
+            .on("zoom", zoomed);
+
+        function point(this: any, event: any, that: any): [number, number, number] | [number, number] {
+            const t = d3.pointers(event, that);
+
+            if (t.length !== tl) {
+                tl = t.length;
+                if (tl > 1) a0 = Math.atan2(t[1][1] - t[0][1], t[1][0] - t[0][0]);
+                // @ts-ignore
+                zoomStarted.call(that, event);
+            }
+
+            return tl > 1 ? [
+                d3.mean(t, p => p[0])!,
+                d3.mean(t, p => p[1])!,
+                Math.atan2(t[1][1] - t[0][1], t[1][0] - t[0][0])
+            ] : t[0];
+        }
+
+        function zoomStarted(this: any, event: any, _d: any) {
+            let pt = point(event, this);
+            v0 = versor.cartesian(projection.invert([pt[0], pt[1]]));
             q0 = versor.fromAngles(r0 = projection.rotate());
         }
 
-        function dragged(event: any, _d: any) {
-            // @ts-ignore
-            const res = projection.rotate(r0).invert([event.x, event.y]);
-            const v1 = versor.cartesian(res);
-            const q1 = versor.multiply(q0, versor.delta(v0, v1));
+        function zoomed(this: any, event: any, d: any) {
+            projection.scale(event.transform.k);
+            const pt = point(event, this);
+            const v1 = versor.cartesian(projection.rotate(r0).invert([pt[0], pt[1]]));
+            const delta = versor.delta(v0, v1);
+            let q1 = versor.multiply(q0, delta);
+
+            if (pt[2]) {
+                const d = (pt[2] - a0) / 2;
+                const s = -Math.sin(d);
+                const c = Math.sign(Math.cos(d));
+                q1 = versor.multiply([Math.sqrt(1 - s * s), 0, 0, c * s], q1);
+            }
+
             projection.rotate(versor.toAngles(q1));
+
+            console.log("Calling zoomStarted here");
+            // @ts-ignore
+            if (delta[0] < 0.7) zoomStarted.call(event, d);
         }
 
-        return d3.drag()
-            .on("start", dragstarted)
-            .on("drag", dragged);
+        return Object.assign((selection: any) =>
+            selection.property('__zoom', d3.zoomIdentity.scale(projection.scale()))
+                .call(zoom), {
+            // @ts-ignore
+            on(type: string, ...options) {
+                return options.length
+                    // @ts-ignore
+                    ? (zoom.on(type, ...options), this)
+                    : zoom.on(type);
+            }
+        }
+        );
     }
 
     async function generate_globe() {
@@ -65,13 +111,16 @@ export function createGlobe(container: HTMLElement) {
         let land50 = topojson.feature(response50, response50.objects.land);
         let land110 = topojson.feature(response110, response110.objects.land);
 
-        const dragCall: d3.DragBehavior<any, any, any> = drag(projection)
-            .on("drag.render", () => render(land110))
-            .on("end.render", () => render(land50));
+        const zoomCall =
+            // @ts-ignore
+            zoom(projection)
+                .on("zoom.render", () => render(land110))
+                // @ts-ignore
+                .on("end.render", () => render(land50));
 
         container.append(
             d3.select(context.canvas)
-                .call(dragCall)
+                .call(zoomCall)
                 .call(() => render(land50))
                 .node()!
         );
