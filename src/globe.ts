@@ -17,13 +17,13 @@ export function createGlobe(container: HTMLElement) {
 
     function render(land: any) {
         context.clearRect(0, 0, width, height);
-        context.beginPath(), path(sphere), context.fillStyle = "#fff", context.fill();
+        context.beginPath(), path(sphere), context.fillStyle = "#358af2", context.fill();
         context.beginPath(), path(graticule), context.strokeStyle = "#ccc", context.stroke();
 
         // RED Graticule
         // context.beginPath(), path(graticule), context.strokeStyle = "#fc0f0f", context.stroke();
 
-        context.beginPath(), path(land), context.fillStyle = "#000", context.fill();
+        context.beginPath(), path(land), context.fillStyle = "#58c43d", context.fill();
         context.beginPath(), path(sphere), context.stroke();
     }
 
