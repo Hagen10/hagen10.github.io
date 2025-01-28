@@ -3,7 +3,7 @@ import * as helper from './helper.ts';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 
-// Code comes from: observablehq.com/@d3/versor-zooming
+// Code comes from: observablehq.com/@d3/versor-zooming and github.com/Fil/d3-inertia
 
 export function createGlobe(container: HTMLElement) {
     const graticule = d3.geoGraticule10();
@@ -27,15 +27,28 @@ export function createGlobe(container: HTMLElement) {
         context.beginPath(), path(sphere), context.stroke();
     }
 
-    function zoom(projection: d3.GeoProjection) {
+    function zoom(projection: d3.GeoProjection, land50: any) {
         let scale = projection.scale();
         let v0: any, q0: any, r0: any, a0: any, tl: any;
         let scaleExtent: [number, number] = [0.8 * scale, 8 * scale];
 
+        let inertiaPosition: [number, number] = [0, 0];
+        let inertiaVelocity: [number, number] = [0, 0];
+        let inertiaTime: number = 0;
+        let inertiaTimer: d3.Timer = d3.timer(function () { });
+        let inertiaT: any;
+
+        let v10: any, q10: any, v11: any;
+
+        const A = 5000;
+        const limit = 1.0001;
+        const B = -Math.log(1 - 1 / limit);
+
         const zoom = d3.zoom()
             .scaleExtent(scaleExtent)
             .on("start", zoomStarted)
-            .on("zoom", zoomed);
+            .on("zoom", zoomed)
+            .on("end", doneZooming);
 
         function point(this: any, event: any, that: any): [number, number, number] | [number, number] {
             const t = d3.pointers(event, that);
@@ -47,6 +60,7 @@ export function createGlobe(container: HTMLElement) {
                 zoomStarted.call(that, event);
             }
 
+            // For multitouch, average positions and compute rotation.
             return tl > 1 ? [
                 d3.mean(t, p => p[0])!,
                 d3.mean(t, p => p[1])!,
@@ -59,11 +73,30 @@ export function createGlobe(container: HTMLElement) {
             // @ts-ignore
             v0 = versor.cartesian(projection.invert([pt[0], pt[1]]));
             q0 = versor.fromAngles(r0 = projection.rotate());
+
+            inertiaPosition = [pt[0], pt[1]];
+            inertiaVelocity = [0, 0];
+            inertiaTimer.stop();
         }
 
+        // For multitouch, compose with a rotation around the axis.
         function zoomed(this: any, event: any, d: any) {
             projection.scale(event.transform.k);
             const pt = point(event, this);
+
+            var time = performance.now();
+            var deltaTime = time - inertiaTime;
+            var decay = 1 - Math.exp(-deltaTime / 1000);
+            let [a, b] = inertiaVelocity.map(function (d, i) {
+                var deltaPos = pt[i] - inertiaPosition[i];
+                var deltaTime = time - inertiaTime;
+                return 1000 * (1 - decay) * deltaPos / deltaTime + d * decay;
+            });
+
+            inertiaVelocity = [a, b];
+            inertiaTime = time;
+            inertiaPosition = [pt[0], pt[1]];
+
             // @ts-ignore
             const v1 = versor.cartesian(projection.rotate(r0).invert([pt[0], pt[1]]));
             const delta = versor.delta(v0, v1);
@@ -76,9 +109,99 @@ export function createGlobe(container: HTMLElement) {
                 q1 = versor.multiply([Math.sqrt(1 - s * s), 0, 0, c * s], q1);
             }
 
+            // console.log("WE ARE HERE A", inertiaPosition);
+            // console.log("WE ARE NOT HERE B", inertiaTime);
+
             projection.rotate(versor.toAngles(q1));
+            // In vicinity of the antipode (unstable) of q0, restart.
             // @ts-ignore
             if (delta[0] < 0.7) zoomStarted.call(event, d);
+        }
+
+        function doneZooming(this: any, event: any, _d: any) {
+            // console.log("ARE WE EVER HERE?", this);
+            // console.log("ARE WE EVER HERE?", event);
+            // console.log("ARE WE EVER HERE?", d);
+
+
+            // SHOULD THIS NOT BE USED??? WE'RE USING THIS INERTIA THING INSTEAD!!!
+            const pt = point(event, this);
+
+            // inertiaPosition = [pt[0], pt[1]];
+
+            var v = inertiaVelocity;
+
+            if (v[0] * v[0] + v[1] * v[1] < 100) return inertiaTimer.stop();
+
+            var time = performance.now();
+            var deltaTime = time - inertiaTime;
+
+            // 100 is replacing opt.hold whatever that is
+            if (deltaTime >= 100) return inertiaTimer.stop();
+
+
+            let [a, b] = inertiaPosition.map(function (d, i) {
+                return d - inertiaVelocity[i] / 1000;
+            });
+
+
+            // @ts-ignore
+            v10 = versor.cartesian(projection.invert([a, b]));
+            q10 = versor.fromAngles(projection.rotate());
+            // @ts-ignore
+            v11 = versor.cartesian(projection.invert(inertiaPosition));
+
+
+            console.log("STARTING TIMER");
+            // var me = this;
+            inertiaTimer.restart(function (e) {
+
+
+                inertiaT = limit * (1 - Math.exp(-B * e / A));
+
+                // console.log("inertiaT is ", inertiaT);
+
+
+                // let [a, b] = inertiaPosition.map(function (d, i) {
+                //     return d - inertiaVelocity[i] / 1000;
+                // });
+
+                // inertiaPosition = [a, b];
+
+                // console.log("a: ", a);
+                // console.log("b: ", b);
+                // console.log("inertiaVelocity: ", inertiaVelocity);
+                // console.log("inertiaPosition: ", inertiaPosition);
+                // // @ts-ignore
+                // v10 = versor.cartesian(projection.invert([a, b]));
+                // q10 = versor.fromAngles(projection.rotate());
+                // // @ts-ignore
+                // v11 = versor.cartesian(projection.invert(inertiaPosition));
+
+                // console.log("v10: ", v10);
+                // console.log("v11: ", v11);
+
+                let delta2 = versor.delta(v10, v11, inertiaT * 1000);
+                let angles = versor.toAngles(versor.multiply(q10, delta2));
+
+                // console.log("angles: ", inertiaVelocity);
+
+
+                projection.rotate(angles);
+
+                render(land50);
+
+                if (inertiaT > 1) {
+                    console.log("STOPPING");
+                    inertiaTimer.stop()
+                    inertiaVelocity = [0, 0];
+                    inertiaT = 1;
+                }
+            });
+
+
+            console.log("5");
+
         }
 
         return Object.assign((selection: any) =>
@@ -107,7 +230,7 @@ export function createGlobe(container: HTMLElement) {
 
         const zoomCall =
             // @ts-ignore
-            zoom(projection)
+            zoom(projection, land50)
                 .on("zoom.render", () => render(land110))
                 // @ts-ignore
                 .on("end.render", () => render(land50));

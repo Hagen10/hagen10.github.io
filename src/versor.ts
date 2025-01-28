@@ -12,9 +12,7 @@ export function cartesian(e: any): triple {
     return [cp * Math.cos(l), cp * Math.sin(l), Math.sin(p)];
 }
 
-export function delta(v0: triple, v1: triple): quad {
-    const alpha = 1;
-
+export function delta(v0: triple, v1: triple, alpha: number=1): quad {
     function cross(v0: triple, v1: triple): triple {
         return [v0[1] * v1[2] - v0[2] * v1[1], v0[2] * v1[0] - v0[0] * v1[2], v0[0] * v1[1] - v0[1] * v1[0]];
     }
