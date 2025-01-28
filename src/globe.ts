@@ -118,7 +118,7 @@ export function createGlobe(container: HTMLElement) {
             if (delta[0] < 0.7) zoomStarted.call(event, d);
         }
 
-        function doneZooming(this: any, event: any, _d: any) {
+        function doneZooming(this: any, _event: any, _d: any) {
             // console.log("ARE WE EVER HERE?", this);
             // console.log("ARE WE EVER HERE?", event);
             // console.log("ARE WE EVER HERE?", d);
