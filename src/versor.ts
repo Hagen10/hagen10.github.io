@@ -3,8 +3,8 @@
 const radians = Math.PI / 180;
 const degrees = 180 / Math.PI;
 
-type triple = [number, number, number];
-type quad = [number, number, number, number];
+export type triple = [number, number, number];
+export type quad = [number, number, number, number];
 
 
 export function cartesian(e: any): triple {
@@ -28,7 +28,7 @@ export function delta(v0: triple, v1: triple, alpha: number=1): quad {
     return [Math.cos(t), w[2] / l * s, -w[1] / l * s, w[0] / l * s];
 }
 
-export function fromAngles([l, p, g]: triple) {
+export function fromAngles([l, p, g]: triple) : quad {
     l *= radians / 2;
     p *= radians / 2;
     g = (g || 0) * radians / 2;
