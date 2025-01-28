@@ -125,7 +125,7 @@ export function createGlobe(container: HTMLElement) {
 
 
             // SHOULD THIS NOT BE USED??? WE'RE USING THIS INERTIA THING INSTEAD!!!
-            const pt = point(event, this);
+            // const pt = point(event, this);
 
             // inertiaPosition = [pt[0], pt[1]];
 
