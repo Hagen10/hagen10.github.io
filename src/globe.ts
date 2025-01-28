@@ -27,7 +27,7 @@ export function createGlobe(container: HTMLElement) {
         context.beginPath(), path(sphere), context.stroke();
     }
 
-    function zoom(projection: d3.GeoProjection, land50: any) {
+    function zoom(projection: d3.GeoProjection, land50: any, land110: any) {
         let scale = projection.scale();
         let v0: any, q0: any, r0: any, a0: any, tl: any;
         let scaleExtent: [number, number] = [0.8 * scale, 8 * scale];
@@ -186,16 +186,18 @@ export function createGlobe(container: HTMLElement) {
 
                 // console.log("angles: ", inertiaVelocity);
 
-
                 projection.rotate(angles);
 
-                render(land50);
+                render(land110);
 
                 if (inertiaT > 1) {
                     console.log("STOPPING");
                     inertiaTimer.stop()
                     inertiaVelocity = [0, 0];
                     inertiaT = 1;
+
+                    render(land50);
+
                 }
             });
 
@@ -230,7 +232,7 @@ export function createGlobe(container: HTMLElement) {
 
         const zoomCall =
             // @ts-ignore
-            zoom(projection, land50)
+            zoom(projection, land50, land110)
                 .on("zoom.render", () => render(land110))
                 // @ts-ignore
                 .on("end.render", () => render(land50));
