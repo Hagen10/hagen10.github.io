@@ -3,6 +3,7 @@ import * as helper from './helper.ts';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import { Feature, GeoJsonProperties, Point } from 'geojson';
+import * as solar from 'solar-calculator';
 
 // Code comes from: observablehq.com/@d3/versor-zooming and github.com/Fil/d3-inertia
 
@@ -11,15 +12,33 @@ interface Topologies {
     advanced: Feature<Point, GeoJsonProperties>
 }
 
+type Sun = [number, number];
+
 export function createGlobe(container: HTMLElement) {
     const graticule = d3.geoGraticule10();
     const sphere: d3.GeoSphere = { type: "Sphere" };
     const width = window.innerWidth * 0.9;
     const height = window.innerHeight * 0.9;
+    const secondsInADay : number = 86400000;
 
     const projection = d3.geoOrthographic().precision(0.1).fitSize([width, height], sphere);
     const context = helper.context2d(width, height);
     const path = d3.geoPath(projection, context);
+
+    function create_sun(customDate: Date) : Sun {
+        const day = new Date(+customDate).setUTCHours(0, 0, 0, 0);
+        const t = solar.century(customDate);
+        const longitude : number = (day - customDate.getTime()) / secondsInADay * 360 - 180;
+        return [longitude - solar.equationOfTime(t) / 4, solar.declination(t)];
+    }
+
+    function antipode([longitude, latitude] : Sun) : Sun {
+        return [longitude + 180, -latitude];
+    }
+
+    const sun = create_sun(new Date);
+
+    const night = d3.geoCircle().radius(90).center(antipode(sun))();
 
     function render(land: Feature<Point, GeoJsonProperties>) {
         context.clearRect(0, 0, width, height);
@@ -30,6 +49,9 @@ export function createGlobe(container: HTMLElement) {
         // context.beginPath(), path(graticule), context.strokeStyle = "#fc0f0f", context.stroke();
 
         context.beginPath(), path(land), context.fillStyle = "#58c43d", context.fill();
+        // Night time
+        context.beginPath(), path(night), context.fillStyle = "rgba(0,0,255,0.3", context.fill();
+
         context.beginPath(), path(sphere), context.stroke();
     }
 
