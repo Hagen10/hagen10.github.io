@@ -21,7 +21,7 @@ export function createGlobe(container: HTMLElement) {
     const height = window.innerHeight;
     const secondsInADay : number = 86400000;
 
-    const projection = d3.geoOrthographic().precision(0.1).fitSize([width, height], sphere);
+    const projection = d3.geoOrthographic().precision(0.1).fitSize([width, height], sphere).scale(350);
     const context = helper.context2d(width, height);
     const path = d3.geoPath(projection, context);
 
@@ -60,7 +60,7 @@ export function createGlobe(container: HTMLElement) {
         let v0: versor.triple, r0: versor.triple, v10: versor.triple, v11: versor.triple;
         let q0: versor.quad, q10: versor.quad;
         let a0: number, tl: number, inertiaTime: number = 0, inertiaT: number;
-        let scaleExtent: [number, number] = [0.8 * scale, 8 * scale];
+        let scaleExtent: [number, number] = [0.8 * scale, 30 * scale];
         let inertiaPosition: [number, number] = [0, 0];
         let inertiaVelocity: [number, number] = [0, 0];
         let inertiaTimer: d3.Timer = d3.timer(function () { });
