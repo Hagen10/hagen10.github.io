@@ -17,8 +17,8 @@ type Sun = [number, number];
 export function createGlobe(container: HTMLElement) {
     const graticule = d3.geoGraticule10();
     const sphere: d3.GeoSphere = { type: "Sphere" };
-    const width = window.innerWidth * 0.9;
-    const height = window.innerHeight * 0.9;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
     const secondsInADay : number = 86400000;
 
     const projection = d3.geoOrthographic().precision(0.1).fitSize([width, height], sphere);
