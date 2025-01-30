@@ -21,7 +21,7 @@ export function createGlobe(container: HTMLElement) {
     const height = window.innerHeight;
     const secondsInADay : number = 86400000;
 
-    const projection = d3.geoOrthographic().precision(0.1).fitSize([width, height], sphere).scale(350);
+    const projection = d3.geoOrthographic().precision(0.1).fitSize([width, height], sphere);
     const context = helper.context2d(width, height);
     const path = d3.geoPath(projection, context);
 
