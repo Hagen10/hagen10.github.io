@@ -2,55 +2,63 @@ import * as versor from './versor.ts';
 import * as helper from './helper.ts';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
-import { Feature, GeoJsonProperties, Point } from 'geojson';
+import { Feature, GeoJsonProperties, MultiLineString, Point } from 'geojson';
 import * as solar from 'solar-calculator';
 
 // Code comes from: observablehq.com/@d3/versor-zooming and github.com/Fil/d3-inertia
 
 interface Topologies {
     basic: Feature<Point, GeoJsonProperties>,
-    advanced: Feature<Point, GeoJsonProperties>
+    advanced: Feature<Point, GeoJsonProperties>,
+    overlay: MultiLineString
 }
 
 type Sun = [number, number];
 
 export function createGlobe(container: HTMLElement) {
-    const graticule = d3.geoGraticule10();
+    const graticule: MultiLineString = d3.geoGraticule10();
     const sphere: d3.GeoSphere = { type: "Sphere" };
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const secondsInADay : number = 86400000;
+    const width: number = window.innerWidth;
+    const height: number = window.innerHeight;
+    const secondsInADay: number = 86400000;
 
     const projection = d3.geoOrthographic().precision(0.1).fitSize([width, height], sphere);
     const context = helper.context2d(width, height);
     const path = d3.geoPath(projection, context);
 
-    function create_sun(customDate: Date) : Sun {
-        const day = new Date(+customDate).setUTCHours(0, 0, 0, 0);
-        const t = solar.century(customDate);
-        const longitude : number = (day - customDate.getTime()) / secondsInADay * 360 - 180;
+    function create_sun(customDate: Date): Sun {
+        // Converting the date to UTC.
+        const customDateInUTC = new Date(customDate.toUTCString().slice(0, -4));
+        const day = new Date(+customDateInUTC).setUTCHours(0, 0, 0, 0);
+        const t = solar.century(customDateInUTC);
+        const longitude: number = (day - customDateInUTC.getTime()) / secondsInADay * 360 - 180;
         return [longitude - solar.equationOfTime(t) / 4, solar.declination(t)];
     }
 
-    function antipode([longitude, latitude] : Sun) : Sun {
+    function antipode([longitude, latitude]: Sun): Sun {
         return [longitude + 180, -latitude];
     }
 
     const sun = create_sun(new Date);
 
     const night = d3.geoCircle().radius(90).center(antipode(sun))();
+    const twilight = d3.geoCircle().radius(95).center(antipode(sun))();
 
-    function render(land: Feature<Point, GeoJsonProperties>) {
+
+    function render(land: Feature<Point, GeoJsonProperties>, overlay?: MultiLineString) {
         context.clearRect(0, 0, width, height);
         context.beginPath(), path(sphere), context.fillStyle = "#358af2", context.fill();
         context.beginPath(), path(graticule), context.strokeStyle = "#ccc", context.stroke();
 
-        // RED Graticule
-        // context.beginPath(), path(graticule), context.strokeStyle = "#fc0f0f", context.stroke();
-
         context.beginPath(), path(land), context.fillStyle = "#58c43d", context.fill();
+
+        if (overlay != null)
+            context.beginPath(), path(overlay), context.strokeStyle = "#656769", context.stroke();
+
         // Night time
-        context.beginPath(), path(night), context.fillStyle = "rgba(0,0,255,0.3", context.fill();
+        context.beginPath(), path(night), context.fillStyle = "rgba(0,0,255,0.3)", context.fill();
+        context.beginPath(), path(twilight), context.fillStyle = "rgba(97, 97, 117, 0.3)", context.fill();
+
 
         context.beginPath(), path(sphere), context.stroke();
     }
@@ -178,7 +186,7 @@ export function createGlobe(container: HTMLElement) {
                     inertiaVelocity = [0, 0];
                     inertiaT = 1;
 
-                    render(topologies.advanced);
+                    render(topologies.advanced, topologies.overlay);
                 }
             });
         }
@@ -198,26 +206,27 @@ export function createGlobe(container: HTMLElement) {
     }
 
     async function generate_globe() {
-        let land50str = "https://cdn.jsdelivr.net/npm/world-atlas@2/land-50m.json";
-        let land110str = "https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json";
+        let land50str = "https://cdn.jsdelivr.net/npm/visionscarto-world-atlas@0.1.0/world/50m.json";
+        let land110str = "https://cdn.jsdelivr.net/npm/visionscarto-world-atlas@0.1.0/world/110m.json";
 
         let response50: any = await d3.json(land50str)!;
         let response110: any = await d3.json(land110str)!;
 
         let land50: Feature<Point, GeoJsonProperties> = topojson.feature(response50, response50.objects.land);
         let land110: Feature<Point, GeoJsonProperties> = topojson.feature(response110, response110.objects.land);
+        let borderMesh: MultiLineString = topojson.mesh(response50, response50.objects.countries, (a, b) => a !== b);
 
         const zoomCall =
             // @ts-ignore
-            zoom(projection, { basic: land110, advanced: land50 })
+            zoom(projection, { basic: land110, advanced: land50, overlay: borderMesh })
                 .on("zoom.render", () => render(land110))
                 // @ts-ignore
-                .on("end.render", () => render(land50));
+                .on("end.render", () => render(land50, borderMesh));
 
         container.append(
             d3.select(context.canvas)
                 .call(zoomCall)
-                .call(() => render(land50))
+                .call(() => render(land50, borderMesh))
                 .node()!
         );
     }
