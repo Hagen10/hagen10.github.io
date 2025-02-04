@@ -1,5 +1,5 @@
 import './style.css'
-import { Globe, setupGlobe } from './globes'
+import { Globe, setupGlobe } from './globe'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
