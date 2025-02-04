@@ -1,5 +1,4 @@
 import './style.css'
-// import { createGlobe } from './globe'
 import { Globe, setupGlobe } from './globes'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
@@ -49,21 +48,11 @@ document.addEventListener('DOMContentLoaded', () => {
               console.log("Turning off Solar Terminator");
 
               globe.setSolarTerminator(false);
-
-              // createGlobe(
-              //   document.querySelector<HTMLElement>('#container')!,
-              //   { solarTerminator: solarTerminator = false }
-              // )
             }
             else {
               console.log("Turning on Solar Terminator");
 
               globe.setSolarTerminator(true);
-
-              // createGlobe(
-              //   document.querySelector<HTMLElement>('#container')!,
-              //   { solarTerminator: solarTerminator = true }
-              // )
             }
             break;
 
@@ -75,9 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// createGlobe(document.querySelector<HTMLElement>('#container')!, { solarTerminator: true })
-
 var globe = new Globe(document.querySelector<HTMLElement>('#container')!);
 
 setupGlobe(globe);
-
